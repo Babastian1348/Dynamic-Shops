@@ -5,11 +5,11 @@
 	"name": "Dynamic Shops",
 	"description": "This mod adds customizable shops for the economy of your server",
 	"authors": [
-		"Babastian"
+		"Babastian1348"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/Babastian1348/Dynamic-Shops"
 	},
 	"license": "MIT",
 	"icon": "assets/dynamic-shops/icon.png",
