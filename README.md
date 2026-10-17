@@ -1,4 +1,4 @@
-# 🏪 Dynamic Shops
+# Dynamic Shops
 
 Well, this is my very first mod, I wanted to make something simple but useful for those who want an economy system in their Minecraft servers, this mod was AI-assisted, all the features, texts, translations, textures and code supervision was human-made, I just wanted to make something simple for my friends and wanted to share it here!
 
