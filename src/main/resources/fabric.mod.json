@@ -1,0 +1,36 @@
+{
+	"schemaVersion": 1,
+	"id": "dynamic-shops",
+	"version": "${version}",
+	"name": "Dynamic Shops",
+	"description": "This mod adds customizable shops for the economy of your server",
+	"authors": [
+		"Babastian"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/dynamic-shops/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.babastian.dynamicshops.DynamicShops"
+		],
+		"client": [
+			"com.babastian.dynamicshops.DynamicShopsClient"
+		],
+		"fabric-datagen": [
+		]
+	},
+	"mixins": [
+		"dynamic-shops.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

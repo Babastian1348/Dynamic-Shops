@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "facing=north,half=lower": { "model": "dynamic-shops:block/white_atm_bottom" },
+    "facing=south,half=lower": { "model": "dynamic-shops:block/white_atm_bottom", "y": 180 },
+    "facing=west,half=lower": { "model": "dynamic-shops:block/white_atm_bottom", "y": 270 },
+    "facing=east,half=lower": { "model": "dynamic-shops:block/white_atm_bottom", "y": 90 },
+
+    "facing=north,half=upper": { "model": "dynamic-shops:block/white_atm_top" },
+    "facing=south,half=upper": { "model": "dynamic-shops:block/white_atm_top", "y": 180 },
+    "facing=west,half=upper": { "model": "dynamic-shops:block/white_atm_top", "y": 270 },
+    "facing=east,half=upper": { "model": "dynamic-shops:block/white_atm_top", "y": 90 }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "dynamic-shops:block/white_sell_block"
+  }
+}

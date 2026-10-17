@@ -1,0 +1,17 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "com.babastian.dynamicshops.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"plugin": "com.babastian.dynamicshops.mixin.DynamicShopsMixinConfig",
+	"mixins": [
+		"FishingBobberTaskMixin",
+		"AdvancementTaskMixin",
+		"TradeTaskMixin",
+		"BlockPlaceTaskMixin",
+		"FurnaceTaskMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

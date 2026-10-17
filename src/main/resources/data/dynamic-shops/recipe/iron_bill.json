@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "group": "iron_bill",
+  "ingredients": [
+    "dynamic-shops:iron_coin",
+    "dynamic-shops:iron_coin",
+    "dynamic-shops:iron_coin",
+    "dynamic-shops:iron_coin",
+    "dynamic-shops:iron_coin"
+  ],
+  "result": {
+    "id": "dynamic-shops:iron_bill"
+  }
+}

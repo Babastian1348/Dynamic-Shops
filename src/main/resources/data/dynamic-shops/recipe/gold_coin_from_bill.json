@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "group": "gold_coin",
+  "ingredients": [
+    "dynamic-shops:gold_bill"
+  ],
+  "result": {
+    "count": 5,
+    "id": "dynamic-shops:gold_coin"
+  }
+}

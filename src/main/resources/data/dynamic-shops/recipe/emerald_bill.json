@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "group": "emerald_bill",
+  "ingredients": [
+    "dynamic-shops:emerald_coin",
+    "dynamic-shops:emerald_coin",
+    "dynamic-shops:emerald_coin",
+    "dynamic-shops:emerald_coin",
+    "dynamic-shops:emerald_coin"
+  ],
+  "result": {
+    "id": "dynamic-shops:emerald_bill"
+  }
+}

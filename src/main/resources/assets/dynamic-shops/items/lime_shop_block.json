@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "dynamic-shops:block/lime_shop_block"
+  }
+}

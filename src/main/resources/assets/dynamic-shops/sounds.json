@@ -1,0 +1,56 @@
+{
+  "buy": {
+    "sounds": [
+      "dynamic-shops:buy"
+    ]
+  },
+  "sell": {
+    "sounds": [
+      "dynamic-shops:sell"
+    ]
+  },
+  "error": {
+    "sounds": [
+      "dynamic-shops:error"
+    ]
+  },
+  "singlecoin": {
+    "subtitle": "subtitles.dynamic-shops.singlecoin",
+    "sounds": [
+      "dynamic-shops:singlecoin"
+    ]
+  },
+  "groupcoin": {
+    "subtitle": "subtitles.dynamic-shops.multicoin",
+    "sounds": [
+      "dynamic-shops:groupcoin"
+    ]
+  },
+  "physicalwithdraw": {
+    "sounds": [
+      "dynamic-shops:coinwithdraw"
+    ]
+  },
+  "withdraw": {
+    "sounds": [
+      "dynamic-shops:withdraw"
+    ]
+  },
+  "deposit": {
+    "sounds": [
+      "dynamic-shops:deposit"
+    ]
+  },
+  "interest": {
+    "subtitle": "subtitles.dynamic-shops.interest",
+    "sounds": [
+      "dynamic-shops:interest"
+    ]
+  },
+  "taskcomplete": {
+    "subtitle": "subtitles.dynamic-shops.taskcomplete",
+    "sounds": [
+      "dynamic-shops:taskcomplete"
+    ]
+  }
+}

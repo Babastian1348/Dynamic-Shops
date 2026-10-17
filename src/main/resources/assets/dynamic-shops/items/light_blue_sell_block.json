@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "dynamic-shops:block/light_blue_sell_block"
+  }
+}
