@@ -21,7 +21,7 @@ public class ModCreativeTabs {
                                 0
                         )
                         .title(Component.translatable("creativetab.dynamic_shops"))
-                        .icon(() -> new ItemStack(ModItems.GOLD_COIN)) // Icono cambiado a la moneda de oro
+                        .icon(() -> new ItemStack(ModItems.GOLD_COIN))
                         .displayItems((params, output) -> {
                             // --- BLOQUES DE VENTA (SELL BLOCKS) ---
                             output.accept(ModBlocks.WHITE_SELL_BLOCK);
@@ -75,6 +75,8 @@ public class ModCreativeTabs {
                             output.accept(ModItems.DIAMOND_COIN);
                             output.accept(ModItems.DIAMOND_BILL);
                             output.accept(ModItems.NETHERITE_BILL);
+                            output.accept(ModItems.VOUCHER);
+                            output.accept(ModItems.WALLET);
                         })
                         .build()
         );

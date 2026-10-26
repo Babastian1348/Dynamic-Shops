@@ -9,7 +9,7 @@ import com.babastian.dynamicshops.money.MoneyComponent;
 public class ModPackets {
 
     public static void register() {
-        // === SELL BLOCK PACKETS ===
+
         PayloadTypeRegistry.serverboundPlay().register(
                 SellConfigSavePacket.TYPE,
                 SellConfigSavePacket.CODEC
@@ -31,7 +31,6 @@ public class ModPackets {
                 BuyItemPacket.CODEC
         );
 
-        // === ATM BLOCK PACKETS ===
         PayloadTypeRegistry.serverboundPlay().register(
                 AtmDepositPacket.TYPE,
                 AtmDepositPacket.CODEC
@@ -47,7 +46,6 @@ public class ModPackets {
                 AtmWithdrawPhysicalPacket.CODEC
         );
 
-        // === CLIENTBOUND PACKETS ===
         PayloadTypeRegistry.clientboundPlay().register(
                 MoneyUpdatePacket.TYPE,
                 MoneyUpdatePacket.CODEC
@@ -58,7 +56,12 @@ public class ModPackets {
                 BankUpdatePacket.CODEC
         );
 
-        // === RECEIVERS SELL BLOCK ===
+        PayloadTypeRegistry.serverboundPlay().register(
+                VoucherSavePacket.TYPE,
+                VoucherSavePacket.CODEC
+        );
+
+
         ServerPlayNetworking.registerGlobalReceiver(
                 SellConfigSavePacket.TYPE,
                 (packet, context) -> {
@@ -75,7 +78,6 @@ public class ModPackets {
                 }
         );
 
-        // === RECEIVERS SHOP BLOCK ===
         ServerPlayNetworking.registerGlobalReceiver(
                 ShopConfigSavePacket.TYPE,
                 (packet, context) -> {
@@ -92,7 +94,6 @@ public class ModPackets {
                 }
         );
 
-        // === RECEIVERS ATM BLOCK ===
         ServerPlayNetworking.registerGlobalReceiver(
                 AtmDepositPacket.TYPE,
                 (packet, context) -> {
@@ -109,7 +110,6 @@ public class ModPackets {
                 }
         );
 
-        // NUEVO: Receiver del retiro físico
         ServerPlayNetworking.registerGlobalReceiver(
                 AtmWithdrawPhysicalPacket.TYPE,
                 (packet, context) -> {
@@ -118,7 +118,14 @@ public class ModPackets {
                 }
         );
 
-        // === MONEY & BANK UPDATE ON JOIN ===
+        ServerPlayNetworking.registerGlobalReceiver(
+                VoucherSavePacket.TYPE,
+                (packet, context) -> {
+                    ServerPlayer player = context.player();
+                    context.server().execute(() -> VoucherSavePacket.handle(player, packet));
+                }
+        );
+
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
             int balance = MoneyComponent.getBalance(player);

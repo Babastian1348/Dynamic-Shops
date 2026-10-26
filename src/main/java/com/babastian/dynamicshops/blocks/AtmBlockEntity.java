@@ -1,8 +1,8 @@
 package com.babastian.dynamicshops.blocks;
 
 import com.babastian.dynamicshops.DynamicShops;
-import com.babastian.dynamicshops.config.ClockConfig;
-import com.babastian.dynamicshops.config.GlobalBankClock;
+import com.babastian.dynamicshops.config.GlobalEconomyData;
+import com.babastian.dynamicshops.config.ModConfig;
 import com.babastian.dynamicshops.money.MoneyComponent;
 import com.babastian.dynamicshops.screens.AtmScreenHandler;
 import com.babastian.dynamicshops.sounds.ModSounds;
@@ -19,7 +19,6 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -59,27 +58,27 @@ public class AtmBlockEntity extends BlockEntity implements ExtendedMenuProvider<
         );
     }
 
-    // === LÓGICA DE TICK E INTERESES ===
+    // === LÓGICA DE TICK E IMPUESTOS ===
 
     public void tick() {
         if (level == null || level.isClientSide()) {
             return;
         }
 
-        checkAndApplyInterest();
+        checkAndApplyTaxes();
     }
 
-    public void checkAndApplyInterest() {
-        if (level == null || level.isClientSide()) {
+    public void checkAndApplyTaxes() {
+        if (level == null || level.isClientSide() || !(level instanceof ServerLevel serverLevel)) {
             return;
         }
 
-        ClockConfig config = ClockConfig.getInstance();
-        if (!config.isBankInterestEnabled()) {
+        ModConfig config = ModConfig.getInstance();
+        if (!config.isBankTaxEnabled()) {
             return;
         }
 
-        int intervalHours = config.getBankInterestIntervalHours();
+        int intervalHours = config.getBankTaxIntervalHours();
         if (intervalHours <= 0) {
             return;
         }
@@ -88,63 +87,60 @@ public class AtmBlockEntity extends BlockEntity implements ExtendedMenuProvider<
         long totalTime;
 
         if (intervalHours <= 24) {
-            if (level instanceof ServerLevel serverLevel) {
-                totalTime = serverLevel.getOverworldClockTime();
-            } else {
-                totalTime = level.getGameTime();
-            }
+            totalTime = serverLevel.getOverworldClockTime();
         } else {
             totalTime = level.getGameTime();
         }
 
         long currentCycle = totalTime / intervalTicks;
 
-        if (GlobalBankClock.getInstance().shouldApplyInterest(currentCycle, intervalHours)) {
-            applyInterestToOnlinePlayers();
+        // Comprobación de ciclo usando el nuevo GlobalEconomyData unificado
+        if (GlobalEconomyData.getInstance(serverLevel).shouldApplyBankTaxes(currentCycle, intervalHours)) {
+            applyTaxesToOnlinePlayers(serverLevel);
             level.playSound(
                     null,
                     worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
                     ModSounds.INTEREST,
                     SoundSource.BLOCKS,
                     1.0F,
-                    1.0F
+                    0.5F // Pitch más bajo para indicar un cobro/gasto fiscal
             );
 
-            DynamicShops.LOGGER.info("[AtmBlock] Tiered interest applied successfully for cycle {}", currentCycle);
+            DynamicShops.LOGGER.info("[AtmBlock] Bank taxes applied successfully for cycle {}", currentCycle);
         }
     }
 
-    private void applyInterestToOnlinePlayers() {
-        if (level == null || level.getServer() == null) {
+    private void applyTaxesToOnlinePlayers(ServerLevel serverLevel) {
+        if (serverLevel.getServer() == null) {
             return;
         }
 
-        ClockConfig config = ClockConfig.getInstance();
+        ModConfig config = ModConfig.getInstance();
 
-        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
             int bankBalance = MoneyComponent.getBankBalance(player);
 
-            if (bankBalance > 0 && bankBalance < MoneyComponent.MAX_BALANCE) {
-                double ratePercent = getInterestRateForBalance(bankBalance, config);
+            // Solo se cobran impuestos si hay saldo positivo en el banco
+            if (bankBalance > 0) {
+                double taxPercent = getTaxRateForBalance(bankBalance, config);
 
-                if (ratePercent > 0.0) {
-                    int interest = (int) Math.floor(bankBalance * (ratePercent / 100.0));
+                if (taxPercent > 0.0) {
+                    int taxAmount = (int) Math.ceil(bankBalance * (taxPercent / 100.0));
 
-                    if (interest > 0) {
-                        MoneyComponent.addBankMoney(player, interest);
+                    if (taxAmount > 0) {
+                        MoneyComponent.removeBankMoney(player, taxAmount);
                     }
                 }
             }
         }
     }
 
-    private double getInterestRateForBalance(int balance, ClockConfig config) {
-        for (ClockConfig.InterestTier tier : config.getBankInterestTiers()) {
+    private double getTaxRateForBalance(int balance, ModConfig config) {
+        for (ModConfig.TaxTier tier : config.getBankTaxTiers()) {
             if (balance <= tier.maxBalance) {
-                return tier.ratePercent;
+                return tier.taxPercent;
             }
         }
-        // Si supera todos los tramos configurados, devuelve 0% por defecto
         return 0.0;
     }
 
@@ -228,7 +224,7 @@ public class AtmBlockEntity extends BlockEntity implements ExtendedMenuProvider<
 
     @Override
     public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-        checkAndApplyInterest();
+        checkAndApplyTaxes();
         return new AtmScreenHandler(containerId, inventory, worldPosition, level);
     }
 }

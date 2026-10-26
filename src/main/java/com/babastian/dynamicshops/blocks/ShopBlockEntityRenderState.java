@@ -6,6 +6,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.UUID;
+
 public class ShopBlockEntityRenderState extends BlockEntityRenderState {
     private ItemStack buyItem = ItemStack.EMPTY;
     public BlockState blockState;
@@ -21,6 +23,12 @@ public class ShopBlockEntityRenderState extends BlockEntityRenderState {
     public boolean hasLimitedStock = false;
     public int nameColor = 0xFFFFFFFF;
     public float displayAlpha = 0.0f;
+
+    // Campos del colaborador
+    public UUID collaboratorUuid = null;
+    public String collaboratorName = "";
+    public int pendingCollaboratorReward = 0;
+    public boolean isLocalPlayerCollaborator = false;
 
     public ItemStack getBuyItem() {
         return buyItem;
@@ -39,5 +47,9 @@ public class ShopBlockEntityRenderState extends BlockEntityRenderState {
         timeUntilReset = "";
         hasLimitedStock = false;
         nameColor = 0xFFFFFFFF;
+        collaboratorUuid = null;
+        collaboratorName = "";
+        pendingCollaboratorReward = 0;
+        isLocalPlayerCollaborator = false;
     }
 }

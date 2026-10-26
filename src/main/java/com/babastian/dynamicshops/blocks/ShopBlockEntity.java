@@ -1,5 +1,6 @@
 package com.babastian.dynamicshops.blocks;
 
+import com.babastian.dynamicshops.sounds.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -9,6 +10,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -24,14 +26,17 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 import com.babastian.dynamicshops.DynamicShops;
-import com.babastian.dynamicshops.config.GlobalStockClock;
-import com.babastian.dynamicshops.config.ClockConfig;
+import com.babastian.dynamicshops.config.GlobalEconomyData;
+import com.babastian.dynamicshops.config.ModConfig;
+import com.babastian.dynamicshops.money.MoneyComponent;
 import com.babastian.dynamicshops.screens.ShopConfigScreenHandler;
 import com.babastian.dynamicshops.screens.ShopScreenHandler;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 public class ShopBlockEntity extends BlockEntity implements Container, ExtendedMenuProvider<BlockPos> {
 
@@ -79,6 +84,14 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
     private long lastResetCycle = -1;
     private int timeRemainingTicks = 0;
     private String customName = "";
+
+    // === Sistema de Colaborador y Recompensas ===
+    @Nullable
+    private UUID collaboratorUuid = null;
+    @Nullable
+    private String collaboratorName = null;
+    private int collaboratorSalesProgress = 0;
+    private int pendingCollaboratorReward = 0;
 
     @Override
     public int getContainerSize() {
@@ -206,6 +219,62 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
         setChanged();
     }
 
+    // === GETTERS Y SETTERS DEL COLABORADOR ===
+    @Nullable
+    public UUID getCollaboratorUuid() {
+        return collaboratorUuid;
+    }
+
+    public void setCollaboratorUuid(@Nullable UUID collaboratorUuid) {
+        this.collaboratorUuid = collaboratorUuid;
+        setChanged();
+    }
+
+    @Nullable
+    public String getCollaboratorName() {
+        return collaboratorName;
+    }
+
+    public void setCollaboratorName(@Nullable String collaboratorName) {
+        this.collaboratorName = collaboratorName;
+        setChanged();
+    }
+
+    public int getCollaboratorSalesProgress() {
+        return collaboratorSalesProgress;
+    }
+
+    public void setCollaboratorSalesProgress(int collaboratorSalesProgress) {
+        this.collaboratorSalesProgress = collaboratorSalesProgress;
+        setChanged();
+    }
+
+    public int getPendingCollaboratorReward() {
+        return pendingCollaboratorReward;
+    }
+
+    public void setPendingCollaboratorReward(int pendingCollaboratorReward) {
+        this.pendingCollaboratorReward = pendingCollaboratorReward;
+        setChanged();
+    }
+
+    public void recordSale(ServerPlayer buyer) {
+        if (collaboratorUuid == null) return;
+
+        int threshold = ModConfig.getInstance().collaboratorSalesThreshold;
+        int reward = ModConfig.getInstance().collaboratorBonusReward;
+
+        if (threshold <= 0 || reward <= 0) return;
+
+        collaboratorSalesProgress++;
+
+        if (collaboratorSalesProgress >= threshold) {
+            collaboratorSalesProgress = 0;
+            pendingCollaboratorReward += reward;
+        }
+        setChanged();
+    }
+
     public int getTimeRemainingTicks() {
         return timeRemainingTicks;
     }
@@ -222,6 +291,16 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
         output.putInt("sold_count", soldCount);
         output.putInt("time_remaining_ticks", timeRemainingTicks);
         output.putString("custom_name", customName);
+
+        if (collaboratorUuid != null) {
+            output.putString("collaborator_uuid", collaboratorUuid.toString());
+        }
+        if (collaboratorName != null) {
+            output.putString("collaborator_name", collaboratorName);
+        }
+        output.putInt("collaborator_sales_progress", collaboratorSalesProgress);
+        output.putInt("pending_collaborator_reward", pendingCollaboratorReward);
+
         super.saveAdditional(output);
     }
 
@@ -241,6 +320,21 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
         soldCount = input.getIntOr("sold_count", 0);
         timeRemainingTicks = input.getIntOr("time_remaining_ticks", 0);
         customName = input.getStringOr("custom_name", "");
+
+        String uuidStr = input.getStringOr("collaborator_uuid", "");
+        if (!uuidStr.isEmpty()) {
+            try {
+                collaboratorUuid = UUID.fromString(uuidStr);
+            } catch (IllegalArgumentException e) {
+                collaboratorUuid = null;
+            }
+        } else {
+            collaboratorUuid = null;
+        }
+
+        collaboratorName = input.getStringOr("collaborator_name", null);
+        collaboratorSalesProgress = input.getIntOr("collaborator_sales_progress", 0);
+        pendingCollaboratorReward = input.getIntOr("pending_collaborator_reward", 0);
     }
 
     @Override
@@ -258,6 +352,15 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
         nbt.putInt("sold_count", soldCount);
         nbt.putInt("time_remaining_ticks", timeRemainingTicks);
         nbt.putString("custom_name", customName);
+
+        if (collaboratorUuid != null) {
+            nbt.putString("collaborator_uuid", collaboratorUuid.toString());
+        }
+        if (collaboratorName != null) {
+            nbt.putString("collaborator_name", collaboratorName);
+        }
+        nbt.putInt("collaborator_sales_progress", collaboratorSalesProgress);
+        nbt.putInt("pending_collaborator_reward", pendingCollaboratorReward);
 
         return nbt;
     }
@@ -281,6 +384,37 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
     public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
         checkAndResetStock();
 
+        // Si el jugador es el colaborador y tiene recompensa pendiente
+        if (player instanceof ServerPlayer serverPlayer && collaboratorUuid != null && serverPlayer.getUUID().equals(collaboratorUuid)) {
+            if (pendingCollaboratorReward > 0) {
+                MoneyComponent.addMoney(serverPlayer, pendingCollaboratorReward);
+
+                // === REPRODUCIR SONIDO MULTICOIN EN EL SERVIDOR ===
+                if (level != null) {
+                    level.playSound(
+                            null,
+                            worldPosition,
+                            ModSounds.MULTICOIN,
+                            SoundSource.PLAYERS,
+                            1.0F,
+                            1.0F
+                    );
+                }
+
+                // === MENSAJE EN DARK GREEN Y BOLD ===
+                Component msg = Component.translatable("message.dynamicshops.collaborator_claim", pendingCollaboratorReward)
+                        .withStyle(net.minecraft.ChatFormatting.DARK_GREEN, net.minecraft.ChatFormatting.BOLD);
+
+                serverPlayer.sendSystemMessage(msg, true); // Actionbar
+
+                pendingCollaboratorReward = 0;
+                setChanged();
+
+                return null; // Reclamó con éxito y evita abrir la GUI en este intento
+            }
+        }
+
+        // Si NO es el colaborador con recompensas pendientes, permitimos que abra su GUI normal
         boolean isCrouching = player.isCrouching();
         boolean isCreative = player.isCreative();
         boolean isOp = player instanceof ServerPlayer serverPlayer &&
@@ -302,7 +436,7 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
             return;
         }
 
-        int intervalHours = ClockConfig.getInstance().getShopStockResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getShopStockResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
         long totalTime;
@@ -318,9 +452,12 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
         }
 
         boolean shouldReset = (totalTime % intervalTicks == 0);
-
         long currentResetCycle = totalTime / intervalTicks;
-        boolean isNewCycle = GlobalStockClock.getInstance().shouldResetStock(currentResetCycle, intervalHours);
+
+        boolean isNewCycle = false;
+        if (level instanceof ServerLevel serverLevel) {
+            isNewCycle = GlobalEconomyData.getInstance(serverLevel).shouldResetShopStock(currentResetCycle, intervalHours);
+        }
 
         if (shouldReset && isNewCycle) {
             soldCount = 0;
@@ -329,8 +466,6 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
                     worldPosition, totalTime, intervalTicks);
         }
     }
-
-    // === MÉTODOS PARA TICK Y DISPLAY ===
 
     public void tick() {
         if (level == null || level.isClientSide()) {
@@ -341,7 +476,7 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
             return;
         }
 
-        int intervalHours = ClockConfig.getInstance().getShopStockResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getShopStockResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
         long totalTime;
@@ -373,7 +508,7 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
             return;
         }
 
-        int intervalHours = ClockConfig.getInstance().getShopStockResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getShopStockResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
         long totalTime;
@@ -405,7 +540,7 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
             return;
         }
 
-        int intervalHours = ClockConfig.getInstance().getShopStockResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getShopStockResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
         long totalTime;
@@ -434,8 +569,6 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
         return Math.max(0, maxStock - soldCount);
     }
 
-    // === MÉTODOS PARA EL DISPLAY ===
-
     public int getStockRemaining() {
         if (!hasLimitedStock) {
             return -1;
@@ -448,7 +581,7 @@ public class ShopBlockEntity extends BlockEntity implements Container, ExtendedM
             return 0;
         }
 
-        int intervalHours = ClockConfig.getInstance().getShopStockResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getShopStockResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
         long totalTime;

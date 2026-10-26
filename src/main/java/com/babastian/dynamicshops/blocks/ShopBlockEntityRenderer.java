@@ -17,7 +17,9 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
+import java.text.NumberFormat;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class ShopBlockEntityRenderer implements BlockEntityRenderer<ShopBlockEntity, ShopBlockEntityRenderState> {
@@ -64,6 +66,11 @@ public class ShopBlockEntityRenderer implements BlockEntityRenderer<ShopBlockEnt
         state.timeUntilReset = blockEntity.getFormattedTimeUntilReset();
         state.hasLimitedStock = blockEntity.hasLimitedStock();
         state.nameColor = 0xFF000000 | blockEntity.getNameColor();
+
+        // Datos del colaborador
+        state.collaboratorUuid = blockEntity.getCollaboratorUuid();
+        state.pendingCollaboratorReward = blockEntity.getPendingCollaboratorReward();
+        state.collaboratorName = blockEntity.getCollaboratorName() != null ? blockEntity.getCollaboratorName() : "Desconocido";
 
         if (state.level != null && minecraft.player != null) {
             var cameraPos = minecraft.player.getEyePosition(partialTicks);
@@ -231,22 +238,45 @@ public class ShopBlockEntityRenderer implements BlockEntityRenderer<ShopBlockEnt
             colors.add(0xFFAA00);
         }
 
+        if (state.collaboratorUuid != null) {
+            lines.add(Component.translatable("display.dynamicshops.collaborator_name", state.collaboratorName).getString());
+            colors.add(0x333333);
+
+            if (state.pendingCollaboratorReward > 0) {
+                lines.add(Component.translatable("display.dynamicshops.collaborator_reward", state.pendingCollaboratorReward).getString());
+                colors.add(0x55FF55);
+            }
+        }
+
         int lineHeight = 10;
         int totalHeight = lines.size() * lineHeight;
         int startY = -totalHeight / 2;
 
         for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
-            int color = colors.get(i);
-            int textColor = textColorBase | (color & 0xFFFFFF);
-
             FormattedCharSequence text;
+            int color = colors.get(i);
+
             if (i == 0) {
-                text = Component.literal(line).withStyle(style -> style.withBold(true)).getVisualOrderText();
+                // Nombre en negrita
+                text = Component.literal(lines.get(i)).withStyle(style -> style.withBold(true)).getVisualOrderText();
+            } else if (i == 1) {
+                // Precio de compra formateado y en verde oscuro
+                String formattedPrice = NumberFormat.getNumberInstance(Locale.US).format(state.itemPrice);
+                text = Component.translatable("display.dynamicshops.shop_price", "$" + formattedPrice)
+                        .withStyle(net.minecraft.ChatFormatting.DARK_GREEN)
+                        .getVisualOrderText();
+            } else if (state.collaboratorUuid != null && state.pendingCollaboratorReward > 0 && i == lines.size() - 1) {
+                // Recompensa de colaborador formateada y en verde oscuro
+                String formattedReward = NumberFormat.getNumberInstance(Locale.US).format(state.pendingCollaboratorReward);
+                text = Component.translatable("display.dynamicshops.collaborator_reward", "$" + formattedReward)
+                        .withStyle(net.minecraft.ChatFormatting.DARK_GREEN)
+                        .getVisualOrderText();
             } else {
-                text = Component.literal(line).getVisualOrderText();
+                // Resto de líneas normales
+                text = Component.literal(lines.get(i)).getVisualOrderText();
             }
 
+            int textColor = textColorBase | (color & 0xFFFFFF);
             int textWidth = minecraft.font.width(text);
 
             submitNodeCollector.submitText(

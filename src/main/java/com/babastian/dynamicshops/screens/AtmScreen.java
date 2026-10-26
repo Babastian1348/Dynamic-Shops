@@ -16,7 +16,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -60,7 +59,7 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
     private static final int PHYSICAL_WITHDRAW_BUTTON_WIDTH = 92;
     private static final int PHYSICAL_WITHDRAW_BUTTON_HEIGHT = 14;
 
-    private static final int MAX_INPUT_AMOUNT = 99_999_999; // ← CAMBIO: 99M en lugar de 999M
+    private static final int MAX_INPUT_AMOUNT = 99_999_999;
 
     private EditBox amountInput;
     private Button depositButton;
@@ -87,7 +86,7 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
                 Component.literal("")
         );
 
-        this.amountInput.setMaxLength(8); // ← CAMBIO: 8 caracteres
+        this.amountInput.setMaxLength(8);
         this.amountInput.setResponder(this::updateInputValidation);
         this.amountInput.setTooltip(Tooltip.create(Component.translatable("tooltip.dynamicshops.bank_amount")));
         this.addRenderableWidget(this.amountInput);
@@ -124,11 +123,11 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
             int bankBalance = MoneyComponent.getBankBalance(this.minecraft.player);
             this.depositButton.active = bankBalance < MoneyComponent.MAX_BALANCE;
 
-            // ==========================================
-            // LOGICA DEL TOOLTIP DINÁMICO DE ERROR
-            // ==========================================
+            // Lógica del tooltip dinámico de espacio para retiro físico
             int amount = getEnteredAmount();
-            if (amount > 0 && bankBalance >= amount) {
+            int maxCredit = MoneyComponent.getMaxWithdrawableCredit(this.minecraft.player);
+
+            if (amount > 0 && amount <= maxCredit) {
                 Map<Item, Integer> simulatedMoney = AtmWithdrawPhysicalPacket.calculatePhysicalMoney(amount);
                 boolean hasSpace = AtmWithdrawPhysicalPacket.hasEnoughSpaceForMultipleItems(this.minecraft.player, simulatedMoney);
 
@@ -159,10 +158,13 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
             long value = Long.parseLong(text);
             int bankBalance = MoneyComponent.getBankBalance(this.minecraft.player);
 
+            // CORRECCIÓN: El EditBox solo se pone en rojo si el número es inválido, menor/igual a 0,
+            // supera el límite de tipeo (99M) o si al depositar rebasaría el límite del banco (999M).
+            // Ya NO se bloquea por los 5,000 de crédito al escribir.
             if (value <= 0 || value > MAX_INPUT_AMOUNT || (bankBalance + value) > MoneyComponent.MAX_BALANCE) {
-                this.amountInput.setTextColor(0xFFFF0000);
+                this.amountInput.setTextColor(0xFFFF0000); // Rojo si hay error lógico de formato/límite
             } else {
-                this.amountInput.setTextColor(0xFFFFFFFF);
+                this.amountInput.setTextColor(0xFFFFFFFF); // Blanco normal
             }
         } catch (NumberFormatException e) {
             this.amountInput.setTextColor(0xFFFF0000);
@@ -183,23 +185,28 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
         }
 
         ClientPlayNetworking.send(new AtmDepositPacket(this.menu.getPos(), amount));
-        playDepositSuccessSound(); // ← CAMBIO: Sonido único para depósito
+        playDepositSuccessSound();
+
+        // CORRECCIÓN: Restablecer el color del texto a blanco al tener éxito
+        this.amountInput.setTextColor(0xFFFFFFFF);
     }
 
     private void onWithdraw() {
         if (this.minecraft == null || this.minecraft.player == null) return;
-        Player player = this.minecraft.player;
         int amount = getEnteredAmount();
-        int bankBalance = MoneyComponent.getBankBalance(player);
+        int maxCredit = MoneyComponent.getMaxWithdrawableCredit(this.minecraft.player);
 
-        if (amount <= 0 || bankBalance < amount) {
+        if (amount <= 0 || amount > maxCredit) {
             this.amountInput.setTextColor(0xFFFF0000);
             playErrorSound();
             return;
         }
 
         ClientPlayNetworking.send(new AtmWithdrawPacket(this.menu.getPos(), amount));
-        playWithdrawSuccessSound(); // ← CAMBIO: Sonido único para retiro
+        playWithdrawSuccessSound();
+
+        // CORRECCIÓN: Restablecer el color del texto a blanco al tener éxito
+        this.amountInput.setTextColor(0xFFFFFFFF);
     }
 
     private void onWithdrawPhysical() {
@@ -207,9 +214,9 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
 
         Player player = this.minecraft.player;
         int amount = getEnteredAmount();
-        int bankBalance = MoneyComponent.getBankBalance(player);
+        int maxCredit = MoneyComponent.getMaxWithdrawableCredit(player);
 
-        if (amount <= 0 || bankBalance < amount) {
+        if (amount <= 0 || amount > maxCredit) {
             this.amountInput.setTextColor(0xFFFF0000);
             playErrorSound();
             return;
@@ -224,7 +231,10 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
         }
 
         ClientPlayNetworking.send(new AtmWithdrawPhysicalPacket(this.menu.getPos(), amount));
-        playPhysicalWithdrawSuccessSound(); // ← CAMBIO: Sonido único para retiro físico
+        playPhysicalWithdrawSuccessSound();
+
+        // CORRECCIÓN: Restablecer el color del texto a blanco al tener éxito
+        this.amountInput.setTextColor(0xFFFFFFFF);
     }
 
     public int getEnteredAmount() {
@@ -289,7 +299,6 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
 
         if (this.minecraft != null && this.minecraft.player != null) {
-            // Formateador universal para separar por comas (ej. $1,000,000)
             NumberFormat format = NumberFormat.getNumberInstance(Locale.US);
 
             // ==========================================
@@ -299,10 +308,9 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
             String pocketText = "$" + format.format(pocketMoney);
             int pocketWidth = this.font.width(pocketText);
 
-            int pocketX = this.leftPos + MONEY_X - pocketWidth;
+            int pocketX = this.leftPos + MONEY_X - pocketWidth; // CORREGIDO: Guion faltante
             int pocketY = this.topPos + MONEY_Y;
 
-            // Si llegamos al máximo, el texto se pone de color ámbar/dorado (0xFFFFAA00), si no, verde
             int pocketColor = (pocketMoney >= MoneyComponent.MAX_BALANCE) ? 0xFFFFAA00 : 0xFF287D25;
 
             graphics.text(
@@ -315,19 +323,17 @@ public class AtmScreen extends AbstractContainerScreen<AtmScreenHandler> {
             );
 
             // ==========================================
-            // TEXTO DEL BANCO (Alineado a la izquierda)
+            // TEXTO DEL BANCO (Soporta color rojo si está en negativo)
             // ==========================================
             int bankMoney = MoneyComponent.getBankBalance(this.minecraft.player);
             String bankText = "$" + format.format(bankMoney);
 
             float scale = 1.2F;
-
-            // Fijamos la esquina izquierda en BANK_MONEY_X
             float targetX = this.leftPos + BANK_MONEY_X;
             float targetY = this.topPos + BANK_MONEY_Y;
 
-            // Lógica de color para el banco
-            int bankColor = (bankMoney >= MoneyComponent.MAX_BALANCE) ? 0xFFFFAA00 : 0xFF287D25;
+            // Si el banco está en números rojos, se muestra en rojo (0xFFFF4444)
+            int bankColor = (bankMoney < 0) ? 0xFFFF4444 : ((bankMoney >= MoneyComponent.MAX_BALANCE) ? 0xFFFFAA00 : 0xFF287D25);
 
             graphics.pose().pushMatrix();
             graphics.pose().translate(targetX, targetY);

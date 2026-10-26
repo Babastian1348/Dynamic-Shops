@@ -17,7 +17,9 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
+import java.text.NumberFormat;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class SellBlockEntityRenderer implements BlockEntityRenderer<SellBlockEntity, SellBlockEntityRenderState> {
@@ -235,21 +237,21 @@ public class SellBlockEntityRenderer implements BlockEntityRenderer<SellBlockEnt
         java.util.List<String> lines = new java.util.ArrayList<>();
         java.util.List<Integer> colors = new java.util.ArrayList<>();
 
-// Línea 1: Nombre del item (YA VIENE DEL BLOCKENTITY, NO SE TRADUCE)
+        // Línea 1: Nombre del item
         lines.add(state.itemName);
         colors.add(state.nameColor);
 
-// Línea 2: Precio
+        // Línea 2: Precio (Temporal para conteo de líneas)
         lines.add(Component.translatable("display.dynamicshops.sale_price", state.itemPrice).getString());
         colors.add(0x00AA00);
 
-// Línea 3: Stock (solo si limitado)
+        // Línea 3: Stock (solo si limitado)
         if (state.hasLimitedStock && state.currentStock >= 0) {
             lines.add(Component.translatable("display.dynamicshops.limit_remaining", state.currentStock).getString());
             colors.add(0xFFAA00);
         }
 
-// Línea 4: Tiempo restante (solo si limitado)
+        // Línea 4: Tiempo restante (solo si limitado)
         if (state.hasLimitedStock && !state.timeUntilReset.isEmpty()) {
             lines.add(Component.translatable("display.dynamicshops.time_remaining", state.timeUntilReset).getString());
             colors.add(0xFFAA00);
@@ -261,20 +263,24 @@ public class SellBlockEntityRenderer implements BlockEntityRenderer<SellBlockEnt
         int startY = -totalHeight / 2;
 
         for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
-            int color = colors.get(i);
-            int textColor = textColorBase | (color & 0xFFFFFF);
-
-            // === PRIMERA LÍNEA (NOMBRE) EN BOLD ===
             FormattedCharSequence text;
+            int color = colors.get(i);
+
             if (i == 0) {
                 // Nombre en negritas
-                text = Component.literal(line).withStyle(style -> style.withBold(true)).getVisualOrderText();
+                text = Component.literal(lines.get(i)).withStyle(style -> style.withBold(true)).getVisualOrderText();
+            } else if (i == 1) {
+                // Línea de Precio con formato de número y verde oscuro completo
+                String formattedPrice = NumberFormat.getNumberInstance(Locale.US).format(state.itemPrice);
+                text = Component.translatable("display.dynamicshops.sale_price", "$" + formattedPrice)
+                        .withStyle(net.minecraft.ChatFormatting.DARK_GREEN)
+                        .getVisualOrderText();
             } else {
-                // Otras líneas normal
-                text = Component.literal(line).getVisualOrderText();
+                // Otras líneas normales
+                text = Component.literal(lines.get(i)).getVisualOrderText();
             }
 
+            int textColor = textColorBase | (color & 0xFFFFFF);
             int textWidth = minecraft.font.width(text);
 
             // === TEXTO SIN SOMBRA ===

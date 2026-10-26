@@ -2,8 +2,10 @@ package com.babastian.dynamicshops.screens;
 
 import com.babastian.dynamicshops.DynamicShops;
 import com.babastian.dynamicshops.blocks.ShopBlockEntity;
+import com.babastian.dynamicshops.money.MoneyComponent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -76,6 +78,27 @@ public class ShopScreenHandler extends AbstractContainerMenu {
             this.addSlot(
                     new Slot(playerInventory, x, 8 + x * 18, 142)
             );
+        }
+    }
+
+    public void executePurchase(ServerPlayer player) {
+        if (this.level.isClientSide()) return;
+        if (this.blockEntity == null || this.blockEntity.getBuyItem().isEmpty()) return;
+
+        int price = this.blockEntity.getPrice();
+
+        if (MoneyComponent.hasEnough(player, price)) {
+            MoneyComponent.removeMoney(player, price);
+
+            ItemStack boughtStack = this.blockEntity.getBuyItem().copy();
+            player.getInventory().placeItemBackInInventory(boughtStack);
+
+            if (this.blockEntity.hasLimitedStock()) {
+                this.blockEntity.setSoldCount(this.blockEntity.getSoldCount() + 1);
+            }
+
+            // Registrar venta para el colaborador
+            this.blockEntity.recordSale(player);
         }
     }
 

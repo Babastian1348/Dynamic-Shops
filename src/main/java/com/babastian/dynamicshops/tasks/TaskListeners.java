@@ -1,6 +1,6 @@
 package com.babastian.dynamicshops.tasks;
 
-import com.babastian.dynamicshops.config.TaskConfig;
+import com.babastian.dynamicshops.config.ModConfig;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -52,10 +52,10 @@ public class TaskListeners {
 
             String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
 
-            if (state.is(BlockTags.LOGS) || TaskConfig.getInstance().isLog(blockId)) {
+            if (state.is(BlockTags.LOGS) || ModConfig.getInstance().isLog(blockId)) {
                 TaskTracker.incrementAndCheck(serverPlayer, TaskTracker.LOGS, 1, "task.logs");
             }
-            else if (TaskConfig.getInstance().isOre(blockId)) {
+            else if (ModConfig.getInstance().isOre(blockId)) {
                 TaskTracker.incrementAndCheck(serverPlayer, TaskTracker.ORES, 1, "task.ores");
             }
             else if (state.getBlock() instanceof CropBlock || state.is(BlockTags.CROPS)) {
@@ -75,7 +75,7 @@ public class TaskListeners {
             double maxHealth = mob.getMaxHealth();
 
             if (mob instanceof EnderDragon || mob instanceof WitherBoss ||
-                    mob instanceof ElderGuardian || maxHealth >= 101) {
+                    mob instanceof ElderGuardian || maxHealth >= 199) {
                 TaskTracker.incrementAndCheck(player, TaskTracker.BOSSES, 1, "task.bosses");
             }
             else if (mob instanceof Enemy) {
@@ -127,7 +127,7 @@ public class TaskListeners {
         BLACKLISTED_BLOCK_IDS.clear();
         BLACKLISTED_TAGS.clear();
 
-        for (String entry : TaskConfig.getInstance().BlacklistPlacement) {
+        for (String entry : ModConfig.getInstance().tasks.BlacklistPlacement) {
             if (entry.startsWith("#")) {
                 String tagName = entry.substring(1);
                 BLACKLISTED_TAGS.add(TagKey.create(Registries.BLOCK, Identifier.parse(tagName)));

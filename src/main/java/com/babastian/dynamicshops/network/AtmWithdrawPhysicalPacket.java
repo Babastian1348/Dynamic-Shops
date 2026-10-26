@@ -47,8 +47,9 @@ public record AtmWithdrawPhysicalPacket(
         int amountToWithdraw = packet.amount();
         int bankBalance = MoneyComponent.getBankBalance(player);
 
-        // 1. Verificación de seguridad básica
-        if (amountToWithdraw <= 0 || bankBalance < amountToWithdraw) {
+        // 1. Verificación de crédito y seguridad: Validar que el crédito disponible cubra el retiro
+        int maxCredit = MoneyComponent.getMaxWithdrawableCredit(player);
+        if (amountToWithdraw <= 0 || amountToWithdraw > maxCredit) {
             return;
         }
 
@@ -60,7 +61,7 @@ public record AtmWithdrawPhysicalPacket(
             return; // No hay espacio, cancelamos transacción
         }
 
-        // 4. Descontar del banco (solo si sabemos que hay espacio)
+        // 4. Descontar del banco (ahora permite sobregiro hasta -5,000 de forma segura)
         MoneyComponent.setBankBalance(player, bankBalance - amountToWithdraw);
 
         // 5. Entregar los ítems al jugador

@@ -107,8 +107,18 @@ public record BuyItemPacket(
             int refund = notAdded * shopBlockEntity.getPrice();
             MoneyComponent.addMoney(player, refund);
             shopBlockEntity.setSoldCount(soldCount + addedCount);
+
+            // === REGISTRAR VENTAS PARA EL COLABORADOR (Solo las unidades entregadas) ===
+            for (int i = 0; i < addedCount; i++) {
+                shopBlockEntity.recordSale(player);
+            }
         } else {
             shopBlockEntity.setSoldCount(soldCount + packet.amount());
+
+            // === REGISTRAR VENTAS PARA EL COLABORADOR ===
+            for (int i = 0; i < packet.amount(); i++) {
+                shopBlockEntity.recordSale(player);
+            }
         }
 
         shopBlockEntity.setChanged();

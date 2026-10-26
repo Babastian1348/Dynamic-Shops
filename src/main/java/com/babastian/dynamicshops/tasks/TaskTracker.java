@@ -1,5 +1,6 @@
 package com.babastian.dynamicshops.tasks;
 
+import com.babastian.dynamicshops.config.ModConfig;
 import com.babastian.dynamicshops.sounds.ModSounds;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
@@ -13,7 +14,6 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import com.babastian.dynamicshops.DynamicShops;
 import com.babastian.dynamicshops.money.MoneyComponent;
-import com.babastian.dynamicshops.config.TaskConfig;
 
 import java.text.NumberFormat;
 import java.util.Locale;
@@ -125,40 +125,40 @@ public class TaskTracker {
     }
 
     public static int getThresholdForTask(AttachmentType<Integer> taskType) {
-        TaskConfig config = TaskConfig.getInstance();
-        if (taskType == COMMON_BLOCKS) return config.commonBlocksAmount;
-        if (taskType == LOGS) return config.logsAmount;
-        if (taskType == ORES) return config.oresAmount;
-        if (taskType == PASSIVE_MOBS) return config.passiveMobsAmount;
-        if (taskType == WEAK_HOSTILES) return config.weakHostilesAmount;
-        if (taskType == STRONG_HOSTILES) return config.strongHostilesAmount;
-        if (taskType == BOSSES) return config.bossesAmount;
-        if (taskType == CROPS) return config.cropsAmount;
-        if (taskType == FISH) return config.fishAmount;
-        if (taskType == DISTANCE) return config.distanceAmount;
-        if (taskType == ADVANCEMENTS) return config.advancementsAmount;
-        if (taskType == TRADES) return config.tradesAmount;
-        if (taskType == BLOCKS_PLACED) return config.blocksPlacedAmount;
-        if (taskType == COOKING) return config.cookingAmount;
+        ModConfig config = ModConfig.getInstance();
+        if (taskType == COMMON_BLOCKS) return config.tasks.BreakCommonBlocks.commonBlocksAmount;
+        if (taskType == LOGS) return config.tasks.ChopLogs.logsAmount;
+        if (taskType == ORES) return config.tasks.MineOres.oresAmount;
+        if (taskType == PASSIVE_MOBS) return config.tasks.KillPassiveMobs.passiveMobsAmount;
+        if (taskType == WEAK_HOSTILES) return config.tasks.KillWeakHostileMobs.weakHostilesAmount;
+        if (taskType == STRONG_HOSTILES) return config.tasks.KillStrongHostileMobs.strongHostilesAmount;
+        if (taskType == BOSSES) return config.tasks.KillBosses.bossesAmount;
+        if (taskType == CROPS) return config.tasks.HarvestCrops.cropsAmount;
+        if (taskType == FISH) return config.tasks.CatchFishes.fishAmount;
+        if (taskType == DISTANCE) return config.tasks.WalkDistance.distanceAmount;
+        if (taskType == ADVANCEMENTS) return config.tasks.CompleteAdvancements.advancementsAmount;
+        if (taskType == TRADES) return config.tasks.TradeWithVillagers.tradesAmount;
+        if (taskType == BLOCKS_PLACED) return config.tasks.PlaceBlocks.blocksPlacedAmount;
+        if (taskType == COOKING) return config.tasks.CookItems.cookingAmount;
         return 1;
     }
 
     public static int getRewardForTask(AttachmentType<Integer> taskType) {
-        TaskConfig config = TaskConfig.getInstance();
-        if (taskType == COMMON_BLOCKS) return config.commonBlocksReward;
-        if (taskType == LOGS) return config.logsReward;
-        if (taskType == ORES) return config.oresReward;
-        if (taskType == PASSIVE_MOBS) return config.passiveMobsReward;
-        if (taskType == WEAK_HOSTILES) return config.weakHostilesReward;
-        if (taskType == STRONG_HOSTILES) return config.strongHostilesReward;
-        if (taskType == BOSSES) return config.bossesReward;
-        if (taskType == CROPS) return config.cropsReward;
-        if (taskType == FISH) return config.fishReward;
-        if (taskType == DISTANCE) return config.distanceReward;
-        if (taskType == ADVANCEMENTS) return config.advancementsReward;
-        if (taskType == TRADES) return config.tradesReward;
-        if (taskType == BLOCKS_PLACED) return config.blocksPlacedReward;
-        if (taskType == COOKING) return config.cookingReward;
+        ModConfig config = ModConfig.getInstance();
+        if (taskType == COMMON_BLOCKS) return config.tasks.BreakCommonBlocks.commonBlocksReward;
+        if (taskType == LOGS) return config.tasks.ChopLogs.logsReward;
+        if (taskType == ORES) return config.tasks.MineOres.oresReward;
+        if (taskType == PASSIVE_MOBS) return config.tasks.KillPassiveMobs.passiveMobsReward;
+        if (taskType == WEAK_HOSTILES) return config.tasks.KillWeakHostileMobs.weakHostilesReward;
+        if (taskType == STRONG_HOSTILES) return config.tasks.KillStrongHostileMobs.strongHostilesReward;
+        if (taskType == BOSSES) return config.tasks.KillBosses.bossesReward;
+        if (taskType == CROPS) return config.tasks.HarvestCrops.cropsReward;
+        if (taskType == FISH) return config.tasks.CatchFishes.fishReward;
+        if (taskType == DISTANCE) return config.tasks.WalkDistance.distanceReward;
+        if (taskType == ADVANCEMENTS) return config.tasks.CompleteAdvancements.advancementsReward;
+        if (taskType == TRADES) return config.tasks.TradeWithVillagers.tradesReward;
+        if (taskType == BLOCKS_PLACED) return config.tasks.PlaceBlocks.blocksPlacedReward;
+        if (taskType == COOKING) return config.tasks.CookItems.cookingReward;
         return 0;
     }
 }

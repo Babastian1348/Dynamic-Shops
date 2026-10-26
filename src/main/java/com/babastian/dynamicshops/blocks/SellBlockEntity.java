@@ -24,8 +24,8 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 import com.babastian.dynamicshops.DynamicShops;
-import com.babastian.dynamicshops.config.GlobalLimitClock;
-import com.babastian.dynamicshops.config.ClockConfig;
+import com.babastian.dynamicshops.config.GlobalEconomyData;
+import com.babastian.dynamicshops.config.ModConfig;
 import com.babastian.dynamicshops.screens.SellConfigScreenHandler;
 import com.babastian.dynamicshops.screens.SellScreenHandler;
 import net.minecraft.core.Registry;
@@ -78,7 +78,7 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
     private int soldCount = 0;
     private long lastResetCycle = -1;
     private int timeRemainingTicks = 0;
-    private String customName = ""; // NUEVO
+    private String customName = "";
 
     @Override
     public int getContainerSize() {
@@ -212,7 +212,6 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
 
     @Override
     protected void saveAdditional(ValueOutput output) {
-        // Guardar item SOLO si no está vacío
         if (!sellItem.isEmpty() && sellItem.getItem() != net.minecraft.world.item.Items.AIR) {
             output.store("sell_item", ItemStack.CODEC, sellItem);
         }
@@ -230,10 +229,8 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
 
-        // Leer item, si falla usar EMPTY
         sellItem = input.read("sell_item", ItemStack.CODEC).orElse(ItemStack.EMPTY);
 
-        // Asegurar que sea EMPTY si es air
         if (sellItem.getItem() == net.minecraft.world.item.Items.AIR) {
             sellItem = ItemStack.EMPTY;
         }
@@ -260,7 +257,7 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
         nbt.putBoolean("has_limited_stock", hasLimitedStock);
         nbt.putInt("sold_count", soldCount);
         nbt.putInt("time_remaining_ticks", timeRemainingTicks);
-        nbt.putString("custom_name", customName); // NUEVO
+        nbt.putString("custom_name", customName);
 
         return nbt;
     }
@@ -297,7 +294,7 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
     }
 
     public void checkAndResetStock() {
-        if (level == null || level.isClientSide()) {
+        if (level == null || level.isClientSide() || !(level instanceof ServerLevel serverLevel)) {
             return;
         }
 
@@ -305,25 +302,14 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
             return;
         }
 
-        int intervalHours = ClockConfig.getInstance().getSellLimitResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getSellLimitResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
-        long totalTime;
-
-        if (intervalHours <= 24) {
-            if (level instanceof ServerLevel serverLevel) {
-                totalTime = serverLevel.getOverworldClockTime();
-            } else {
-                totalTime = level.getGameTime();
-            }
-        } else {
-            totalTime = level.getGameTime();
-        }
-
+        long totalTime = (intervalHours <= 24) ? serverLevel.getOverworldClockTime() : level.getGameTime();
         boolean shouldReset = (totalTime % intervalTicks == 0);
 
         long currentResetCycle = totalTime / intervalTicks;
-        boolean isNewCycle = GlobalLimitClock.getInstance().shouldResetStock(currentResetCycle, intervalHours);
+        boolean isNewCycle = GlobalEconomyData.getInstance(serverLevel).shouldResetLimitStock(currentResetCycle, intervalHours);
 
         if (shouldReset && isNewCycle) {
             soldCount = 0;
@@ -344,7 +330,7 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
             return;
         }
 
-        int intervalHours = ClockConfig.getInstance().getSellLimitResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getSellLimitResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
         long totalTime;
@@ -360,15 +346,12 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
 
         long currentResetCycle = totalTime / intervalTicks;
 
-        // Si cambió el ciclo, resetear stock
         if (currentResetCycle != lastResetCycle) {
             lastResetCycle = currentResetCycle;
             soldCount = 0;
             setChanged();
         }
     }
-
-    // === ACTUALIZAR TIMER ===
 
     public void updateTimer() {
         if (level == null || level.isClientSide()) {
@@ -379,7 +362,7 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
             return;
         }
 
-        int intervalHours = ClockConfig.getInstance().getSellLimitResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getSellLimitResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
         long totalTime;
@@ -396,13 +379,10 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
         long timeInCycle = totalTime % intervalTicks;
         long remaining = intervalTicks - timeInCycle;
 
-        // Forzar sync cada segundo (20 ticks)
         if (remaining % 20 == 0) {
             setChanged();
         }
     }
-
-    // === ACTUALIZAR TIEMPO RESTANTE ===
 
     public void updateTimeRemaining() {
         if (level == null || level.isClientSide()) {
@@ -414,7 +394,7 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
             return;
         }
 
-        int intervalHours = ClockConfig.getInstance().getSellLimitResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getSellLimitResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
         long totalTime;
@@ -431,7 +411,6 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
         long timeInCycle = totalTime % intervalTicks;
         timeRemainingTicks = (int)(intervalTicks - timeInCycle);
 
-        // Sync cada segundo (20 ticks)
         if (timeRemainingTicks % 20 == 0) {
             setChanged();
         }
@@ -439,7 +418,7 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
 
     public int getCurrentStock() {
         if (!hasLimitedStock) {
-            return -1; // Infinito
+            return -1;
         }
         return Math.max(0, maxStock - soldCount);
     }
@@ -448,7 +427,7 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
 
     public int getStockRemaining() {
         if (!hasLimitedStock) {
-            return -1; // Stock infinito
+            return -1;
         }
         return maxStock - soldCount;
     }
@@ -458,7 +437,7 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
             return 0;
         }
 
-        int intervalHours = ClockConfig.getInstance().getSellLimitResetIntervalHours();
+        int intervalHours = ModConfig.getInstance().getSellLimitResetIntervalHours();
         long intervalTicks = intervalHours * 1000L;
 
         long totalTime;
@@ -493,12 +472,10 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
     }
 
     public String getItemName() {
-        // Si hay nombre personalizado, usarlo
         if (!customName.isEmpty()) {
             return customName;
         }
 
-        // Si no, usar nombre del item
         if (sellItem.isEmpty()) {
             return net.minecraft.network.chat.Component.translatable("display.dynamicshops.empty_sale").getString();
         }
@@ -517,8 +494,6 @@ public class SellBlockEntity extends BlockEntity implements Container, ExtendedM
             case EPIC -> 0xFF55FF;
         };
     }
-
-    // === HELPER PARA SYNC ===
 
     public void syncToClients() {
         if (level != null && !level.isClientSide()) {

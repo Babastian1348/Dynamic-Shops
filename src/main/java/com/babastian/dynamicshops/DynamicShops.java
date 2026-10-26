@@ -3,7 +3,7 @@ package com.babastian.dynamicshops;
 import com.babastian.dynamicshops.blocks.ModBlocks;
 import com.babastian.dynamicshops.commands.MoneyCommands;
 import com.babastian.dynamicshops.commands.TaskCommands;
-import com.babastian.dynamicshops.config.TaskConfig;
+import com.babastian.dynamicshops.config.ModConfig;
 import com.babastian.dynamicshops.items.ModItems;
 import com.babastian.dynamicshops.money.MoneyComponent;
 import com.babastian.dynamicshops.network.ModPackets;
@@ -52,7 +52,7 @@ public class DynamicShops implements ModInitializer {
 		TaskListeners.register();
 
 		// Cargar config
-		TaskConfig.getInstance();
+		ModConfig.getInstance();
 
 		// -------------------------------------------------------------------
 		// SISTEMA DE MUERTE: Penalización del 50% en bolsillo, 0% en banco

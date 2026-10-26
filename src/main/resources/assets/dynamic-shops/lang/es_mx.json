@@ -1,8 +1,14 @@
 {
-  "command.money.balance.self": "Tu balance es: $%s",
-  "command.money.balance.other": "El balance de %s es: $%s",
-  "command.money.add.success": "Añadidos $%s a %s. Nuevo balance: $%s",
-  "command.money.set.success": "Balance de %s establecido en: $%s",
+  "command.money.balance.pocket.self": "Tu balance es: $%s",
+  "command.money.balance.pocket.other": "El balance de %s es: $%s",
+  "command.money.balance.bank.self": "Tu balance de banco es: $%s",
+  "command.money.balance.bank.other": "El balance de banco de %s es: $%s",
+  "command.money.add.pocket.success": "Añadidos $%s a %s. Nuevo balance de bolsillo: $%s",
+  "command.money.add.bank.success": "Añadidos $%s a %s. Nuevo balance de banco: $%s",
+  "command.money.subtract.pocket.success": "Sustraídos $%s a %s. Nuevo balance de bolsillo: $%s",
+  "command.money.subtract.bank.success": "Sustraídos $%s a %s. Nuevo balance de banco: $%s",
+  "command.money.set.pocket.success": "Balance de bolsillo de %s establecido en: $%s",
+  "command.money.set.bank.success": "Balance de banco de %s establecido en: $%s",
 
   "command.task.complete.success": "Tarea '%s' completada para %s. Recompensa: $%s",
   "command.task.progress": "Progreso de '%s' para %s: %s/%s",
@@ -26,10 +32,11 @@
   "task.cooking": "(+$%s) por cocinar/fundir",
   "task.money_max": "(+$0) Has conseguido el dinero máximo ",
   "message.dynamicshops.currency_used": "+$%s",
+  "message.dynamicshops.collaborator_claim": "Collected $%d from your collab",
 
   "subtitles.dynamic-shops.singlecoin": "Dinero utilizado",
   "subtitles.dynamic-shops.multicoin": "Conjunto de dinero utilizado",
-  "subtitles.dynamic-shops.interest": "Cajero aplica interés",
+  "subtitles.dynamic-shops.interest": "Cajero aplica impuesto",
   "subtitles.dynamic-shops.taskcomplete": "Tarea completada",
 
   "creativetab.dynamic_shops": "Dynamic Shops",
@@ -78,6 +85,9 @@
   "item.dynamic-shops.diamond_coin": "Moneda de diamante",
   "item.dynamic-shops.diamond_bill": "Billete de diamante",
   "item.dynamic-shops.netherite_bill": "Billete de netherita",
+  "tooltip.dynamicshops.currency.value": "§7Valor: %s",
+  "item.dynamic-shops.voucher": "Vale",
+  "item.dynamic-shops.wallet": "Billetera",
 
   "display.dynamicshops.sell_block": "Bloque de Venta",
   "tooltip.dynamicshops.sell_price": "§ePrecio de venta\n§7Cuánto dinero los jugadores\n§7recibirán por ítem\n§fRango: 1 - 999,999,999",
@@ -101,6 +111,12 @@
   "tooltip.dynamicshops.buy_price": "§ePrecio de compra\n§7Cuánto dinero los jugadores\n§7gastarán por ítem\n§fRango: 1 - 999,999,999",
   "tooltip.dynamicshops.stock": "§eLímite de stock\n§7Ítems máximos a comprar\n§7por ciclo\n§fRango: 1 - 1,024",
   "tooltip.dynamicshops.limited_stock": "§eStock limitado\n§7Si se marca, los jugadores solo\n§7pueden comprar cierta cantidad\n§7de ítems por ciclo",
+  "button.dynamicshops.collaborator.none": "Colab: Ninguno",
+  "button.dynamicshops.collaborator.assigned": "Colab: %s",
+  "button.dynamicshops.collaborator.dropdown_none": "§c[Ninguno]",
+  "tooltip.dynamicshops.collaborator": "§eColaboradores\n§7Asigna o cambia al colaborador",
+  "display.dynamicshops.collaborator.none_name": "Ninguno",
+  "display.dynamicshops.collaborator.unknown_name": "Desconocido",
   "tooltip.dynamicshops.buy_1": "§eComprar 1 item\n§7Compra 1 unidad del ítem",
   "tooltip.dynamicshops.buy_10": "§eComprar 10 ítems\n§7Compra 10 unidades del ítem\n§7si es acumulable",
   "tooltip.dynamicshops.buy_64": "§eComprar 64 ítems\n§7Compra 64 unidades del ítem\n§7si es acumulable",
@@ -110,6 +126,8 @@
   "display.dynamicshops.empty_shop": "Tienda Vacía",
   "display.dynamicshops.shop_price": "Precio de compra: %s",
   "display.dynamicshops.stock_remaining": "Stock: %s",
+  "display.dynamicshops.collaborator_name": "Colaborador: %s",
+  "display.dynamicshops.collaborator_reward": "Recaudado: $%d",
 
   "display.dynamicshops.atm_block": "Cajero",
   "tooltip.dynamicshops.bank_amount": "§eCantidad de Banco\n§7Cuánto dinero los jugadores\n§7pueden depositar/retirar\n§fRango: 1 - 99,999,999",
@@ -119,5 +137,9 @@
   "tooltip.dynamicshops.inventory_full": "Inventario lleno",
   "button.dynamicshops.deposit": "Depositar",
   "button.dynamicshops.withdraw": "Retirar",
-  "button.dynamicshops.physical_withdraw": "Retiro en físico"
+  "button.dynamicshops.physical_withdraw": "Retiro en físico",
+  "screen.dynamicshops.voucher_edit": "Configura Vale",
+  "tooltip.dynamicshops.wallet.capacity": "§7Puede §7almacenar §7hasta §r$%s",
+  "tooltip.dynamicshops.wallet.content": "§7Contenido: §r$%s §7/ §r$%s",
+  "actionbar.dynamicshops.pocket_money": "Dinero de bolsillo: $%s"
 }

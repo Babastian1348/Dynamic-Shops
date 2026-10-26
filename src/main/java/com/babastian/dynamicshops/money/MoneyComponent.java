@@ -12,9 +12,16 @@ import com.mojang.serialization.Codec;
 
 public class MoneyComponent {
     public static final int MAX_BALANCE = 999_999_999;
-// -------------------------------------------------------------------
-// DINERO DEL INVENTARIO (BOLSILLO)
-// -------------------------------------------------------------------
+
+    // El bolsillo NO permite saldos negativos (Cero crédito directo en tiendas)
+    public static final int POCKET_MIN_BALANCE = 0;
+
+    // El banco permite un sobregiro de crédito de hasta -5,000
+    public static final int BANK_MIN_BALANCE = -5_000;
+
+    // -------------------------------------------------------------------
+    // DINERO DEL INVENTARIO (BOLSILLO)
+    // -------------------------------------------------------------------
     public static final AttachmentType<Integer> MONEY_BALANCE =
             AttachmentRegistry.create(
                     Identifier.fromNamespaceAndPath(DynamicShops.MOD_ID, "money_balance"),
@@ -30,7 +37,7 @@ public class MoneyComponent {
     public static void setBalance(Player player, int amount) {
         if (player == null) return;
         amount = Math.min(amount, MAX_BALANCE);
-        amount = Math.max(amount, 0);
+        amount = Math.max(amount, POCKET_MIN_BALANCE); // Nunca baja de 0
         player.setAttached(MONEY_BALANCE, amount);
 
         if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
@@ -40,13 +47,12 @@ public class MoneyComponent {
 
     public static void addMoney(Player player, int amount) {
         int current = getBalance(player);
-        if (current >= MAX_BALANCE) return;
         setBalance(player, current + amount);
     }
 
     public static void removeMoney(Player player, int amount) {
         int current = getBalance(player);
-        setBalance(player, Math.max(0, current - amount));
+        setBalance(player, current - amount);
     }
 
     public static boolean hasEnough(Player player, int amount) {
@@ -56,9 +62,10 @@ public class MoneyComponent {
     public static boolean isAtMax(Player player) {
         return getBalance(player) >= MAX_BALANCE;
     }
-// -------------------------------------------------------------------
-// DINERO DEL BANCO (ATM)
-// -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // DINERO DEL BANCO (ATM - Sobregiro permisivo)
+    // -------------------------------------------------------------------
     public static final AttachmentType<Integer> BANK_BALANCE =
             AttachmentRegistry.create(
                     Identifier.fromNamespaceAndPath(DynamicShops.MOD_ID, "bank_balance"),
@@ -74,7 +81,7 @@ public class MoneyComponent {
     public static void setBankBalance(Player player, int amount) {
         if (player == null) return;
         amount = Math.min(amount, MAX_BALANCE);
-        amount = Math.max(amount, 0);
+        amount = Math.max(amount, BANK_MIN_BALANCE); // Permite hasta -5,000
         player.setAttached(BANK_BALANCE, amount);
 
         if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
@@ -84,16 +91,24 @@ public class MoneyComponent {
 
     public static void addBankMoney(Player player, int amount) {
         int current = getBankBalance(player);
-        if (current >= MAX_BALANCE) return;
         setBankBalance(player, current + amount);
     }
 
     public static void removeBankMoney(Player player, int amount) {
         int current = getBankBalance(player);
-        setBankBalance(player, Math.max(0, current - amount));
+        setBankBalance(player, current - amount);
+    }
+
+    /**
+     * Comprueba cuánto dinero más puede retirar el jugador a crédito.
+     * Ejemplo: Si su saldo en el banco es 0, puede retirar hasta 5000.
+     * Si su saldo es -4000, solo puede retirar 1000 más.
+     */
+    public static int getMaxWithdrawableCredit(Player player) {
+        int currentBank = getBankBalance(player);
+        return Math.max(0, currentBank - BANK_MIN_BALANCE);
     }
 
     public static void register() {
     }
 }
-

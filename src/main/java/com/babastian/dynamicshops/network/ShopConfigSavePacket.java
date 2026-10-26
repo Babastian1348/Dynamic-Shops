@@ -10,6 +10,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 public record ShopConfigSavePacket(
         BlockPos pos,
@@ -17,7 +20,8 @@ public record ShopConfigSavePacket(
         int price,
         int maxStock,
         boolean hasLimitedStock,
-        String customName
+        String customName,
+        @Nullable UUID collaboratorUuid
 ) implements CustomPacketPayload {
 
     public static final Type<ShopConfigSavePacket> TYPE =
@@ -34,26 +38,23 @@ public record ShopConfigSavePacket(
                     ShopConfigSavePacket::pos,
                     ItemStack.STREAM_CODEC,
                     ShopConfigSavePacket::buyItem,
-                    StreamCodec.of(
-                            RegistryFriendlyByteBuf::writeInt,
-                            RegistryFriendlyByteBuf::readInt
-                    ),
+                    StreamCodec.of(RegistryFriendlyByteBuf::writeInt, RegistryFriendlyByteBuf::readInt),
                     ShopConfigSavePacket::price,
-                    StreamCodec.of(
-                            RegistryFriendlyByteBuf::writeInt,
-                            RegistryFriendlyByteBuf::readInt
-                    ),
+                    StreamCodec.of(RegistryFriendlyByteBuf::writeInt, RegistryFriendlyByteBuf::readInt),
                     ShopConfigSavePacket::maxStock,
-                    StreamCodec.of(
-                            RegistryFriendlyByteBuf::writeBoolean,
-                            RegistryFriendlyByteBuf::readBoolean
-                    ),
+                    StreamCodec.of(RegistryFriendlyByteBuf::writeBoolean, RegistryFriendlyByteBuf::readBoolean),
                     ShopConfigSavePacket::hasLimitedStock,
-                    StreamCodec.of(
-                            (buf, value) -> buf.writeUtf(value, 64),
-                            buf -> buf.readUtf(64)
-                    ),
+                    StreamCodec.of(RegistryFriendlyByteBuf::writeUtf, RegistryFriendlyByteBuf::readUtf),
                     ShopConfigSavePacket::customName,
+                    StreamCodec.of(
+                            (buf, uuid) -> {
+                                boolean hasUuid = uuid != null;
+                                buf.writeBoolean(hasUuid);
+                                if (hasUuid) buf.writeUUID(uuid);
+                            },
+                            buf -> buf.readBoolean() ? buf.readUUID() : null
+                    ),
+                    ShopConfigSavePacket::collaboratorUuid,
                     ShopConfigSavePacket::new
             );
 
@@ -62,36 +63,11 @@ public record ShopConfigSavePacket(
         return TYPE;
     }
 
-    public static void handle(
-            ServerPlayer player,
-            ShopConfigSavePacket packet
-    ) {
-        if (player.level() == null) {
-            return;
-        }
+    public static void handle(ServerPlayer player, ShopConfigSavePacket packet) {
+        if (player.level() == null) return;
 
         BlockEntity blockEntity = player.level().getBlockEntity(packet.pos());
-
-        if (!(blockEntity instanceof ShopBlockEntity shopBlockEntity)) {
-            return;
-        }
-
-        boolean isCreative = player.isCreative();
-        boolean isOp = player.permissions().hasPermission(
-                net.minecraft.server.permissions.Permissions.COMMANDS_ADMIN
-        );
-
-        if (!isCreative && !isOp) {
-            return;
-        }
-
-        if (packet.price() < 1 || packet.price() > 999_999_999) {
-            return;
-        }
-
-        if (packet.hasLimitedStock() && (packet.maxStock() < 1 || packet.maxStock() > 1024)) {
-            return;
-        }
+        if (!(blockEntity instanceof ShopBlockEntity shopBlockEntity)) return;
 
         shopBlockEntity.setBuyItem(packet.buyItem());
         shopBlockEntity.setPrice(packet.price());
@@ -99,6 +75,21 @@ public record ShopConfigSavePacket(
         shopBlockEntity.setHasLimitedStock(packet.hasLimitedStock());
         shopBlockEntity.setCustomName(packet.customName());
 
+        shopBlockEntity.setCollaboratorUuid(packet.collaboratorUuid());
+
+        // Corrección: Usamos player.level().getServer() para obtener el servidor de forma segura
+        if (packet.collaboratorUuid() != null && player.level().getServer() != null) {
+            ServerPlayer collabPlayer = player.level().getServer().getPlayerList().getPlayer(packet.collaboratorUuid());
+            if (collabPlayer != null) {
+                shopBlockEntity.setCollaboratorName(collabPlayer.getGameProfile().name());
+            } else {
+                shopBlockEntity.setCollaboratorName("Desconocido");
+            }
+        } else {
+            shopBlockEntity.setCollaboratorName(null);
+        }
+
         shopBlockEntity.setChanged();
+        shopBlockEntity.syncToClients();
     }
 }

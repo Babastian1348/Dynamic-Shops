@@ -9,7 +9,9 @@
 		"AdvancementTaskMixin",
 		"TradeTaskMixin",
 		"BlockPlaceTaskMixin",
-		"FurnaceTaskMixin"
+		"FurnaceTaskMixin",
+		"WalletBundleContainerMixin",
+		"WalletContentsMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

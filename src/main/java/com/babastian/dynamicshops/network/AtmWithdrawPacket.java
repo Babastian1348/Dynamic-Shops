@@ -49,9 +49,10 @@ public record AtmWithdrawPacket(
 
         int currentBankBalance = MoneyComponent.getBankBalance(player);
 
-        // Validación en servidor: tener suficiente dinero en el banco
-        if (currentBankBalance < packet.amount()) {
-            return;
+        // Validación de crédito: Comprobamos si el retiro deja el banco por debajo de -5,000
+        int newBankBalance = currentBankBalance - packet.amount();
+        if (newBankBalance < MoneyComponent.BANK_MIN_BALANCE) {
+            return; // Supera el límite máximo de endeudamiento permitido
         }
 
         // Transferir: Banco -> Bolsillo
